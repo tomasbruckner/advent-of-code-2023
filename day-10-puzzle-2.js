@@ -33,13 +33,41 @@ const PIPE_MAP = {
   S: [DIRECTIONS.NORTH, DIRECTIONS.EAST, DIRECTIONS.WEST, DIRECTIONS.SOUTH],
 };
 
-const OPEN = {
-  X: ["-", "L", "J", "F", "7"],
-  Y: ["|", "L", "J", "F", "7"],
-};
-
-const EMPTY = ".";
 const START = "S";
+
+// in some cases S is not the corner
+// we assume it is, but to have more general solutions
+// you should modify the logic in function calculateSolution
+// to check if S is or is not the corner
+const CORNERS = ["L", "J", "7", "F", "S"];
+
+const resultTest3 = solve(
+  fs.readFileSync("./day-10-input-test-3.txt", "utf-8")
+);
+console.log(`Solution to test 3: ${resultTest3}`);
+
+const resultTest4 = solve(
+  fs.readFileSync("./day-10-input-test-4.txt", "utf-8")
+);
+console.log(`Solution to test 4: ${resultTest4}`);
+
+const resultTest5 = solve(
+  fs.readFileSync("./day-10-input-test-5.txt", "utf-8")
+);
+console.log(`Solution to test 5: ${resultTest5}`);
+
+const resultFull = solve(fs.readFileSync("./day-10-input-full.txt", "utf-8"));
+console.log(`Solution to full: ${resultFull}`);
+
+function solve(input) {
+  const matrix = input.split("\n").map((x) => x.split(""));
+  const startNode = findStart(matrix);
+
+  const finalCycle = search(startNode, matrix);
+  const result = calculateSolution(finalCycle, matrix);
+
+  return result;
+}
 
 function findStart(matrix) {
   for (let i = 0; i < matrix.length; i++) {
@@ -109,123 +137,26 @@ function search(startNode, matrix) {
   return 0;
 }
 
-function getStartCharacter(paths, matrix) {
-  const firstSymbol = matrix[paths[1].x][paths[1].y];
-  const lastSymbol = matrix[paths.at(-1).y][paths.at(-1).x];
-  console.log(firstSymbol, lastSymbol);
-
-  if (
-    DIRECTIONS.EAST.validSymbols.includes(firstSymbol) &&
-    DIRECTIONS.WEST.validSymbols.includes(lastSymbol)
-  ) {
-    return "-";
-  }
-
-  if (
-    DIRECTIONS.NORTH.validSymbols.includes(firstSymbol) &&
-    DIRECTIONS.SOUTH.validSymbols.includes(lastSymbol)
-  ) {
-    return "|";
-  }
-
-  if (
-    DIRECTIONS.EAST.validSymbols.includes(firstSymbol) &&
-    DIRECTIONS.SOUTH.validSymbols.includes(lastSymbol)
-  ) {
-    return "F";
-  }
-
-  if (
-    DIRECTIONS.WEST.validSymbols.includes(firstSymbol) &&
-    DIRECTIONS.SOUTH.validSymbols.includes(lastSymbol)
-  ) {
-    return "J";
-  }
-
-  if (
-    DIRECTIONS.NORTH.validSymbols.includes(firstSymbol) &&
-    DIRECTIONS.EAST.validSymbols.includes(lastSymbol)
-  ) {
-    return "L";
-  }
-
-  if (
-    DIRECTIONS.WEST.validSymbols.includes(firstSymbol) &&
-    DIRECTIONS.SOUTH.validSymbols.includes(lastSymbol)
-  ) {
-    return "7";
-  }
-}
-
 function calculateSolution(paths, matrix) {
-  // matrix[paths[0].x][paths[0].y] = getStartCharacter(paths, matrix);
-  matrix[paths[0].x][paths[0].y] = 'F';
+  const points = paths.filter(({ x, y }) => CORNERS.includes(matrix[x][y]));
+  const area = calculateArea(points);
 
-  paths.sort((a, b) => {
-    if (a.x !== b.x) {
-      return a.x - b.x;
-    }
+  // pick's theorem
+  return area - paths.length / 2 + 1;
+}
 
-    return a.y - b.y;
-  });
+// shoelace
+function calculateArea(points) {
+  const normalizedPoints = [...points, points[0]]
+  let sumA = 0;
+  let sumB = 0;
+  for (let i = 1; i < normalizedPoints.length; i++) {
+    const { x: y, y: x } = normalizedPoints[i - 1];
+    const { x: nextY, y: nextX } = normalizedPoints[i];
 
-  let sum = 0;
-  const openX = {};
-  const openY = {};
-  const pathMap = paths.reduce((acc, { x, y }) => {
-    acc[`${x}-${y}`] = matrix[x][y];
-
-    return acc;
-  }, {});
-
-  for (let i = 0; i < matrix.length; i++) {
-    for (let j = 0; j < matrix[i].length; j++) {
-      const key = `${i}-${j}`;
-      if (!pathMap[key]) {
-        if (openX[j] && openY[i] && matrix[i][j] === EMPTY) {
-          sum += 1;
-        }
-        continue;
-      }
-
-      const value = matrix[i][j];
-      if (OPEN.X.includes(value)) {
-        openX[j] = !openX[j];
-      }
-
-      if (OPEN.Y.includes(value)) {
-        openY[i] = !openY[i];
-      }
-    }
+    sumA += x * nextY;
+    sumB += y * nextX;
   }
 
-  return sum;
+  return Math.abs(sumA - sumB) / 2;
 }
-
-function solve(input) {
-  const matrix = input.split("\n").map((x) => x.split(""));
-  const startNode = findStart(matrix);
-
-  const finalCycle = search(startNode, matrix);
-  const result = calculateSolution(finalCycle, matrix);
-
-  return result;
-}
-
-// const resultTest3 = solve(
-//   fs.readFileSync("./day-10-input-test-3.txt", "utf-8")
-// );
-// console.log(`Solution to test 3: ${resultTest3}`);
-
-const resultTest4 = solve(
-  fs.readFileSync("./day-10-input-test-4.txt", "utf-8")
-);
-console.log(`Solution to test 4: ${resultTest4}`);
-
-// const resultTest5 = solve(
-//   fs.readFileSync("./day-10-input-test-5.txt", "utf-8")
-// );
-// console.log(`Solution to test 5: ${resultTest5}`);
-
-// const resultFull = solve(fs.readFileSync("./day-10-input-full.txt", "utf-8"));
-// console.log(`Solution to full: ${resultFull}`);
