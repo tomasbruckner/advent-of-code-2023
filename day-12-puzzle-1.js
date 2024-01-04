@@ -1,8 +1,8 @@
 const fs = require("fs");
 
-const OASIS = "#";
+const DAMAGED = "#";
 const UNKNOWN = "?";
-const SAND = ".";
+const WORKING = ".";
 
 function isValidMap(map, groups) {
   let currentGroupIndex = 0;
@@ -10,7 +10,7 @@ function isValidMap(map, groups) {
   let currentOasis = 0;
   for (let i = 0; i <= map.length; i++) {
     const currentTile = map[i];
-    if (currentTile === OASIS) {
+    if (currentTile === DAMAGED) {
       currentOasis += 1;
       continue;
     }
@@ -37,8 +37,8 @@ function generateMaps(map) {
     return [];
   }
 
-  newMap1[index] = SAND;
-  newMap2[index] = OASIS;
+  newMap1[index] = WORKING;
+  newMap2[index] = DAMAGED;
 
   return [newMap1.join(''), newMap2.join('')];
 }
